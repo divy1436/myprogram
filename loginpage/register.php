@@ -1,89 +1,44 @@
-<!-- Full code for register.php -->
 <?php
-$conn = new mysqli('localhost', 'root', '', 'login_db'); // Replace 'test' with your DB name
+// Step 1: Connect to database
+$con = mysqli_connect('localhost', 'root', '', 'login_db');
 
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+// Check connection
+if (!$con) {
+    die("Connection failed: " . mysqli_connect_error());
 }
 
-$registerError = "";
-$registerSuccess = "";
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+// Step 2: Check if form is submitted
+if (isset($_POST['submit'])) {
     $email = $_POST['email'];
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ? OR username = ?");
-    $stmt->bind_param("ss", $email, $username);
-    $stmt->execute();
-    $stmt->store_result();
+    // Step 3: Insert into database
+    $query = "INSERT INTO users (email, username, password) 
+              VALUES ('$email', '$username', '$password')";
 
-    if ($stmt->num_rows > 0) {
-        $registerError = "❌ Email or Username already exists.";
+    $run = mysqli_query($con, $query);
+
+    if ($run) {
+        echo "✅ Registration Successful!";
     } else {
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-        $stmt = $conn->prepare("INSERT INTO users (email, username, password) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $email, $username, $hashedPassword);
-
-        if ($stmt->execute()) {
-            $registerSuccess = "✅ Registered successfully!";
-        } else {
-            $registerError = "❌ Registration failed.";
-        }
+        echo "❌ Error: " . mysqli_error($con);
     }
-
-    $stmt->close();
-    $conn->close();
 }
 ?>
 
-<!-- HTML Form -->
-<form method="POST" action="register.php">
-    <style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        padding: 20px;
-    }
-    form {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 5px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    input[type="email"],
-    input[type="text"],
-    input[type="password"] {
-        width: 100%;
-        padding: 10px;
-        margin: 10px 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-    button {
-        background-color: #28a745;
-        color: white;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    button:hover {
-        background-color: #218838;
-    }
-</style>
-<h2>Register</h2>
-<form action="register.php" method="POST">
-    <input type="email" name="email" placeholder="Email" required><br>
-    <input type="text" name="username" placeholder="Username" required><br>
-    <input type="password" name="password" placeholder="Password" required><br>
-    <button type="submit">Register</button>
-</form>
-
-
-<?php
-if ($registerError) echo "<p style='color:red;'>$registerError</p>";
-if ($registerSuccess) echo "<p style='color:green;'>$registerSuccess</p>";
-?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+</head>
+<body>
+    <h2>Register Form</h2>
+    <form method="POST">
+        Email: <input type="email" name="email" required><br><br>
+        Username: <input type="text" name="username" required><br><br>
+        Password: <input type="password" name="password" required><br><br>
+        <input type="submit" name="submit" value="Register">
+    </form>
+</body>
+</html>
